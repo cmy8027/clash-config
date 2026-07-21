@@ -34,32 +34,38 @@ const RATIO_REGEX = /[xX✕✖⨉倍率](\d+(?:\.\d+)?)[xX✕✖⨉倍率]?/i
  * false = 禁用
  */
 const ruleOptions = {
-    apple: false,
-    microsoft: true,
-    github: true,
-    google: true,
-    openai: true,
-    spotify: false,
-    youtube: true,
-    bahamut: false,
-    netflix: false,
-    tiktok: false,
-    disney: false,
-    pixiv: true,
-    hbo: false,
-    biliintl: false,
-    tvb: false,
-    hulu: false,
-    primevideo: false,
-    telegram: false,
-    line: false,
-    whatsapp: false,
-    games: true,
-    japan: true,
-    tracker: true,
-    ads: true,
+    apple: false, // 苹果服务
+    microsoft: true, // 微软服务
+    github: true, // Github服务
+    google: true, // Google服务
+    openai: true, // 国外AI和GPT
+    spotify: false, // Spotify
+    youtube: true, // YouTube
+    bahamut: false, // 巴哈姆特/动画疯
+    netflix: false, // Netflix网飞
+    tiktok: false, // 国际版抖音
+    disney: false, // 迪士尼
+    pixiv: true, // Pixiv
+    hbo: false, // HBO
+    biliintl: false, // 哔哩哔哩东南亚
+    tvb: false, // TVB
+    hulu: false, // Hulu
+    primevideo: false, // 亚马逊prime video
+    telegram: false, // Telegram通讯软件
+    line: false, // Line通讯软件
+    whatsapp: false, // Whatsapp
+    games: true, // 游戏策略组
+    japan: true, // 日本网站策略组
+    tracker: true, // 网络分析和跟踪服务
+    ads: true, // 常见的网络广告
 }
 
+/**
+ * 地区配置，通过regex匹配代理节点名称
+ * regex会有一定概率误判，自己调整一下吧
+ * excludeHighPercentage是排除高倍率节点的开关，只对地区分组有效
+ * 倍率大于regions里的ratioLimit值的代理节点会被排除
+ */
 const regionOptions = {
     excludeHighPercentage: true,
     autoDetect: true,
@@ -133,7 +139,7 @@ const regionOptions = {
         },
         {
             name: 'CA加拿大',
-            regex: /加|加拿大|ca|CA|canada|CANADA|CAN/i,
+            regex: /加拿大|🇨🇦|ca|CA|canada|CANADA|CAN/i,
             ratioLimit: 5,
             icon: 'https://fastly.jsdelivr.net/gh/Koolson/Qure/IconSet/Color/Canada.png',
         },
@@ -188,21 +194,28 @@ const regionOptions = {
     ],
 }
 
+/**
+ * 其实两组DNS就够了，一组国内，一组国外
+ * defaultDNS是用来解析DNS的，必须为IP
+ * DNS最好不要超过两个，从业界某知名APP的文档里学的
+ */
 const defaultDNS = ["tls://1.12.12.12", "tls://223.5.5.5"]
 
 const chinaDNS = [
-    '223.6.6.6',
-    '119.29.29.29',
-    '223.5.5.5',
-    '1.12.12.12',
-    '114.114.114.114'
-]
+        '223.6.6.6',
+        '119.29.29.29',                    // Tencent Dnspod
+        '223.5.5.5',                       // Ali DNS
+        '1.12.12.12',                      // China Telecom
+        "114.114.114.114"
+        ]
 
-const foreignDNS = [
-    'https://120.53.53.53/dns-query',
-    'https://223.5.5.5/dns-query'
-]
+const foreignDNS = ['https://120.53.53.53/dns-query', 'https://223.5.5.5/dns-query']
 
+/**
+ * DNS相关配置
+ * true = 启用
+ * false = 禁用
+ */
 const dnsConfig = {
     enable: true,
     listen: ':1053',
@@ -218,6 +231,10 @@ const dnsConfig = {
     'fake-ip-filter': ['*', '+.lan', '+.local', '+.market.xiaomi.com'],
     nameserver: [...foreignDNS],
     'proxy-server-nameserver': [...foreignDNS],
+    /**
+     * 这里对域名解析进行分流
+     * 由于默认dns是国外的了，只需要把国内ip和域名分流到国内dns
+     */
     'nameserver-policy': {
         'geosite:private': 'system',
         'geosite:cn,steam@cn,category-games@cn,microsoft@cn,apple@cn': chinaDNS,
@@ -226,12 +243,14 @@ const dnsConfig = {
     },
 }
 
+// 规则集通用配置
 const ruleProviderCommon = {
     type: 'http',
     format: 'yaml',
     interval: 86400,
 }
 
+// 代理组通用配置
 const groupBaseOption = {
     interval: 300,
     timeout: 3000,
@@ -241,83 +260,129 @@ const groupBaseOption = {
     hidden: false,
 }
 
-const CODE_TO_REGION = {
-    US: { name: 'US美国', icon: 'https://fastly.jsdelivr.net/gh/Koolson/Qure/IconSet/Color/United_States.png' },
-    HK: { name: 'HK香港', icon: 'https://fastly.jsdelivr.net/gh/Koolson/Qure/IconSet/Color/Hong_Kong.png' },
-    JP: { name: 'JP日本', icon: 'https://fastly.jsdelivr.net/gh/Koolson/Qure/IconSet/Color/Japan.png' },
-    KR: { name: 'KR韩国', icon: 'https://fastly.jsdelivr.net/gh/Koolson/Qure/IconSet/Color/Korea.png' },
-    SG: { name: 'SG新加坡', icon: 'https://fastly.jsdelivr.net/gh/Koolson/Qure/IconSet/Color/Singapore.png' },
-    CN: { name: 'CN中国大陆', icon: 'https://fastly.jsdelivr.net/gh/Koolson/Qure/IconSet/Color/China_Map.png' },
-    TW: { name: 'TW台湾省', icon: 'https://fastly.jsdelivr.net/gh/Koolson/Qure/IconSet/Color/China.png' },
-    GB: { name: 'GB英国', icon: 'https://fastly.jsdelivr.net/gh/Koolson/Qure/IconSet/Color/United_Kingdom.png' },
-    DE: { name: 'DE德国', icon: 'https://fastly.jsdelivr.net/gh/Koolson/Qure/IconSet/Color/Germany.png' },
-    MY: { name: 'MY马来西亚', icon: 'https://fastly.jsdelivr.net/gh/Koolson/Qure/IconSet/Color/Malaysia.png' },
-    TR: { name: 'TK土耳其', icon: 'https://fastly.jsdelivr.net/gh/Koolson/Qure/IconSet/Color/Turkey.png' },
-    CA: { name: 'CA加拿大', icon: 'https://fastly.jsdelivr.net/gh/Koolson/Qure/IconSet/Color/Canada.png' },
-    FR: { name: 'FR法国', icon: 'https://fastly.jsdelivr.net/gh/Koolson/Qure/IconSet/Color/France.png' },
-    GR: { name: 'GR希腊', icon: 'https://fastly.jsdelivr.net/gh/Koolson/Qure/IconSet/Color/Greece.png' },
-    LT: { name: 'LT立陶宛', icon: 'https://fastly.jsdelivr.net/gh/Koolson/Qure/IconSet/Color/Lithuania.png' },
-    MK: { name: 'MK北马其顿', icon: 'https://fastly.jsdelivr.net/gh/Koolson/Qure/IconSet/Color/North_Macedonia.png' },
-    NL: { name: 'NL荷兰', icon: 'https://fastly.jsdelivr.net/gh/Koolson/Qure/IconSet/Color/Netherlands.png' },
-    PL: { name: 'PL波兰', icon: 'https://fastly.jsdelivr.net/gh/Koolson/Qure/IconSet/Color/Poland.png' },
-    SE: { name: 'SE瑞典', icon: 'https://fastly.jsdelivr.net/gh/Koolson/Qure/IconSet/Color/Sweden.png' },
-    AR: { name: 'AR阿根廷', icon: 'https://fastly.jsdelivr.net/gh/Koolson/Qure/IconSet/Color/Argentina.png' },
-}
+// 代理提供商中常见的流量、到期、订阅信息节点不加入策略组
+const nodeExcludeFilter =
+    '(?i)GB|Traffic|Expire|Premium|频道|订阅|ISP|流量|到期|重置'
 
-const FLAG_TO_CODE = {}
+
+
+// ===== 自动识别国家映射与工具 =====
+const CODE_TO_REGION = {
+  US: { name: 'US美国', icon: 'https://fastly.jsdelivr.net/gh/Koolson/Qure/IconSet/Color/United_States.png' },
+  HK: { name: 'HK香港', icon: 'https://fastly.jsdelivr.net/gh/Koolson/Qure/IconSet/Color/Hong_Kong.png' },
+  JP: { name: 'JP日本', icon: 'https://fastly.jsdelivr.net/gh/Koolson/Qure/IconSet/Color/Japan.png' },
+  KR: { name: 'KR韩国', icon: 'https://fastly.jsdelivr.net/gh/Koolson/Qure/IconSet/Color/Korea.png' },
+  SG: { name: 'SG新加坡', icon: 'https://fastly.jsdelivr.net/gh/Koolson/Qure/IconSet/Color/Singapore.png' },
+  CN: { name: 'CN中国大陆', icon: 'https://fastly.jsdelivr.net/gh/Koolson/Qure/IconSet/Color/China_Map.png' },
+  TW: { name: 'TW台湾省', icon: 'https://fastly.jsdelivr.net/gh/Koolson/Qure/IconSet/Color/China.png' },
+  GB: { name: 'GB英国', icon: 'https://fastly.jsdelivr.net/gh/Koolson/Qure/IconSet/Color/United_Kingdom.png' },
+  DE: { name: 'DE德国', icon: 'https://fastly.jsdelivr.net/gh/Koolson/Qure/IconSet/Color/Germany.png' },
+  MY: { name: 'MY马来西亚', icon: 'https://fastly.jsdelivr.net/gh/Koolson/Qure/IconSet/Color/Malaysia.png' },
+  TR: { name: 'TK土耳其', icon: 'https://fastly.jsdelivr.net/gh/Koolson/Qure/IconSet/Color/Turkey.png' },
+  CA: { name: 'CA加拿大', icon: 'https://fastly.jsdelivr.net/gh/Koolson/Qure/IconSet/Color/Canada.png' },
+  FR: { name: 'FR法国', icon: 'https://fastly.jsdelivr.net/gh/Koolson/Qure/IconSet/Color/France.png' },
+  GR: { name: 'GR希腊', icon: 'https://fastly.jsdelivr.net/gh/Koolson/Qure/IconSet/Color/Greece.png' },
+  LT: { name: 'LT立陶宛', icon: 'https://fastly.jsdelivr.net/gh/Koolson/Qure/IconSet/Color/Lithuania.png' },
+  MK: { name: 'MK北马其顿', icon: 'https://fastly.jsdelivr.net/gh/Koolson/Qure/IconSet/Color/North_Macedonia.png' },
+  NL: { name: 'NL荷兰', icon: 'https://fastly.jsdelivr.net/gh/Koolson/Qure/IconSet/Color/Netherlands.png' },
+  PL: { name: 'PL波兰', icon: 'https://fastly.jsdelivr.net/gh/Koolson/Qure/IconSet/Color/Poland.png' },
+  SE: { name: 'SE瑞典', icon: 'https://fastly.jsdelivr.net/gh/Koolson/Qure/IconSet/Color/Sweden.png' },
+  AR: { name: 'AR阿根廷', icon: 'https://fastly.jsdelivr.net/gh/Koolson/Qure/IconSet/Color/Argentina.png' },
+};
+
+const FLAG_TO_CODE = {};
 
 const ZH_TO_CODE = {
-    '美国': 'US', '香港': 'HK', '日本': 'JP', '韩国': 'KR', '新加坡': 'SG',
-    '中国': 'CN', '台湾': 'TW', '英国': 'GB', '德国': 'DE', '马来': 'MY',
-    '土耳其': 'TR', '加拿大': 'CA', '法国': 'FR', '希腊': 'GR',
-    '立陶宛': 'LT', '北马其顿': 'MK', '马其顿': 'MK', '荷兰': 'NL',
-    '波兰': 'PL', '瑞典': 'SE', '阿根廷': 'AR'
-}
+  '美国': 'US', '香港': 'HK', '日本': 'JP', '韩国': 'KR', '新加坡': 'SG', '中国': 'CN', '台湾': 'TW',
+  '英国': 'GB', '德国': 'DE', '马来': 'MY', '土耳其': 'TR', '加拿大': 'CA', '法国': 'FR', '希腊': 'GR',
+  '立陶宛': 'LT', '北马其顿': 'MK', '马其顿': 'MK', '荷兰': 'NL', '波兰': 'PL', '瑞典': 'SE', '阿根廷': 'AR'
+};
 
 const CODE_TOKENS = {
-    USA: 'US', US: 'US', CAN: 'CA', DEU: 'DE', DE: 'DE',
-    FRA: 'FR', FR: 'FR', GBR: 'GB', UK: 'GB', GB: 'GB',
-    GRC: 'GR', GR: 'GR', LTU: 'LT', LT: 'LT', MKD: 'MK',
-    MK: 'MK', NLD: 'NL', NL: 'NL', POL: 'PL', PL: 'PL',
-    SWE: 'SE', SE: 'SE', HKG: 'HK', HK: 'HK', JPN: 'JP',
-    JP: 'JP', SGP: 'SG', SG: 'SG', TWN: 'TW', TW: 'TW',
-    CHN: 'CN', CN: 'CN', KOR: 'KR', KR: 'KR', TUR: 'TR',
-    TR: 'TR', MYS: 'MY', MY: 'MY', ARG: 'AR', AR: 'AR',
-    ARGENTINA: 'AR'
-}
+  USA: 'US', US: 'US', CAN: 'CA', DEU: 'DE', DE: 'DE', FRA: 'FR', FR: 'FR', GBR: 'GB', UK: 'GB', GB: 'GB',
+  GRC: 'GR', GR: 'GR', LTU: 'LT', LT: 'LT', MKD: 'MK', MK: 'MK', NLD: 'NL', NL: 'NL', POL: 'PL', PL: 'PL',
+  SWE: 'SE', SE: 'SE', HKG: 'HK', HK: 'HK', JPN: 'JP', JP: 'JP', SGP: 'SG', SG: 'SG', TWN: 'TW', TW: 'TW',
+  CHN: 'CN', CN: 'CN', KOR: 'KR', KR: 'KR', TUR: 'TR', TR: 'TR', MYS: 'MY', MY: 'MY', ARG: 'AR', AR: 'AR', ARGENTINA: 'AR'
+};
 
+// ===== 性能优化：预编译国家代码正则 =====
 const CODE_TOKEN_REGEXES = Object.keys(CODE_TOKENS)
-    .sort((a, b) => b.length - a.length)
-    .map(tk => ({
-        regex: new RegExp(`(?:^|[^A-Z])${tk}(?:[^A-Z]|$)`),
-        code: CODE_TOKENS[tk]
-    }))
+  .sort((a, b) => b.length - a.length)
+  .map(tk => ({ regex: new RegExp(`(?:^|[^A-Z])${tk}(?:[^A-Z]|$)`), code: CODE_TOKENS[tk] }));
 
 function detectCountryCode(name) {
-    for (const zh in ZH_TO_CODE) {
-        if (name.includes(zh)) return ZH_TO_CODE[zh]
-    }
-
-    const upper = name.toUpperCase()
-
-    for (const { regex, code } of CODE_TOKEN_REGEXES) {
-        if (regex.test(upper)) return code
-    }
-
-    return null
+  // FLAG_TO_CODE 为空，跳过
+  // for (const [flag, code] of Object.entries(FLAG_TO_CODE)) {
+  //   if (name.includes(flag)) return code;
+  // }
+  
+  // 优化：使用 for...of 代替 Object.entries，减少迭代开销
+  for (const zh in ZH_TO_CODE) {
+    if (name.includes(zh)) return ZH_TO_CODE[zh];
+  }
+  
+  const upper = name.toUpperCase();
+  // 使用预编译的正则表达式
+  for (const { regex, code } of CODE_TOKEN_REGEXES) {
+    if (regex.test(upper)) return code;
+  }
+  return null;
 }
-
+// ===== End 自动识别工具 =====
+//
+// 自定义规则集配置 - 统一管理 RULE-SET 和对应的 rule-providers
+// 添加新的规则集时，只需要在这里配置一次即可
+//
 const customRuleSets = {
+    // 下载软件应用规则集
     applications: {
         behavior: 'classical',
         format: 'text',
         url: 'https://fastly.jsdelivr.net/gh/DustinWin/ruleset_geodata@clash-ruleset/applications.list',
         path: './ruleset/DustinWin/applications.list',
     },
+
+    // AI 服务细分规则
+    bing: {
+        behavior: 'classical',
+        format: 'yaml',
+        url: 'https://testingcf.jsdelivr.net/gh/blackmatrix7/ios_rule_script@master/rule/Clash/Bing/Bing.yaml',
+        path: './ruleset/blackmatrix7/bing.yaml',
+    },
+    copilot: {
+        behavior: 'classical',
+        format: 'yaml',
+        url: 'https://testingcf.jsdelivr.net/gh/blackmatrix7/ios_rule_script@master/rule/Clash/Copilot/Copilot.yaml',
+        path: './ruleset/blackmatrix7/copilot.yaml',
+    },
+    claude: {
+        behavior: 'classical',
+        format: 'yaml',
+        url: 'https://testingcf.jsdelivr.net/gh/blackmatrix7/ios_rule_script@master/rule/Clash/Claude/Claude.yaml',
+        path: './ruleset/blackmatrix7/claude.yaml',
+    },
+    bard: {
+        behavior: 'classical',
+        format: 'yaml',
+        url: 'https://testingcf.jsdelivr.net/gh/blackmatrix7/ios_rule_script@master/rule/Clash/BardAI/BardAI.yaml',
+        path: './ruleset/blackmatrix7/bard.yaml',
+    },
+
+    // 示例：可以添加更多自定义规则集
+    // customGaming: {
+    //     behavior: 'classical',
+    //     format: 'text',
+    //     url: 'https://example.com/gaming.list',
+    //     path: './ruleset/custom/gaming.list',
+    // }
 }
 
+/**
+ * 初始化规则提供者
+ */
 const ruleProviders = new Map()
 
+// 自动注册自定义规则集
 Object.entries(customRuleSets).forEach(([name, config]) => {
     ruleProviders.set(name, {
         ...ruleProviderCommon,
@@ -325,97 +390,116 @@ Object.entries(customRuleSets).forEach(([name, config]) => {
     })
 })
 
+// 规则列表
+/**
+ * 自定义规则配置 - 分类管理，便于维护
+ * 只需要在对应的数组中添加域名或关键词即可
+ *
+ * 使用说明：
+ * 1. 添加新的策略组：在 customRules 中添加新的对象
+ * 2. 添加域名规则：在对应策略的 domainSuffix 数组中添加
+ * 3. 添加关键词规则：在对应策略的 domainKeyword 数组中添加
+ * 4. 添加精确域名：在对应策略的 domain 数组中添加
+ * 5. 添加进程规则：在对应策略的 processName 数组中添加
+ * 6. 添加规则集：在对应策略的 ruleSets 数组中添加
+ */
 const customRules = {
+    // 直连规则 - 不走代理的网站和应用
     direct: {
         target: 'DIRECT',
-        domainSuffix: [
-            'warframe.com',
-            'prlrr.com',
-            'g5air.com',
-            'qslk.net',
-            'darensoft.com'
-        ],
-        domainKeyword: [
-            'audiences',
-            'rlzy',
-            'rsxt',
-            'g5air',
-            'sharepoint.com'
-        ],
+        domainSuffix: ['warframe.com', 'prlrr.com', 'g5air.com', 'qslk.net', 'darensoft.com'],
+        domainKeyword: ['audiences', 'rlzy' , 'rsxt', 'g5air', 'sharepoint.com'],
         domain: [],
-        processName: [
-            'SunloginClient',
-            'SunloginClient.exe',
-            'AnyDesk',
-            'AnyDesk.exe'
-        ],
-        ruleSets: []
+        processName: ['SunloginClient', 'SunloginClient.exe', 'AnyDesk', 'AnyDesk.exe'],
+        ruleSets: [] // 规则集，格式：['规则集名称']
     },
 
+    // 默认节点规则 - 走默认代理的网站
     defaultProxy: {
         target: '默认节点',
-        domainSuffix: [
-            'augmentcode.com',
-            'javdb.com',
-            'jdbstatic.com'
-        ],
-        domainKeyword: [
-            'postman',
-            'stripchat',
-            'qbittorrent'
-        ],
+        domainSuffix: ['augmentcode.com', 'javdb.com', 'jdbstatic.com'],
+        domainKeyword: ['postman', 'stripchat', 'qbittorrent'],
         domain: [],
         processName: ['Windsurf.exe'],
         ruleSets: []
     },
 
+    // 下载软件规则 - 专门的下载工具
     downloadApps: {
         target: '下载软件',
         domainSuffix: [],
         domainKeyword: [],
         domain: [],
-        ruleSets: ['applications']
+        ruleSets: ['applications'] // 使用 applications 规则集
     },
 
+    // 日本网站规则 - 专门走日本节点的网站
     japanSites: {
         target: '日本网站',
         domainSuffix: ['mgstage.com', 'dmm.co.jp'],
         domainKeyword: ['dmm.com', 'seesaawiki', 'mgstage'],
         domain: ['dmm.co.jp'],
-        ruleSets: []
-    }
+        ruleSets: [] // 注意：日本网站的 RULE-SET 在 ruleOptions.japan 中处理
+    },
+
+    // 示例：美国网站规则（可以根据需要启用）
+    // usSites: {
+    //     target: 'US美国',
+    //     domainSuffix: ['hulu.com', 'netflix.com'],
+    //     domainKeyword: ['disney'],
+    //     domain: [],
+    //     ruleSets: []
+    // },
+
+    // 示例：游戏相关规则（可以根据需要启用）
+    // gamingSites: {
+    //     target: '游戏专用',
+    //     domainSuffix: ['steam.com', 'epicgames.com'],
+    //     domainKeyword: ['gaming'],
+    //     domain: [],
+    //     ruleSets: []
+    // }
 }
 
+/**
+ * 生成规则数组的函数 - 通用化处理
+ */
 function generateCustomRules() {
     const rules = []
 
+    // 遍历所有自定义规则配置
     Object.values(customRules).forEach(ruleConfig => {
         const target = ruleConfig.target
 
+        // 生成 DOMAIN-SUFFIX 规则
         if (ruleConfig.domainSuffix) {
             ruleConfig.domainSuffix.forEach(domain => {
                 rules.push(`DOMAIN-SUFFIX,${domain},${target}`)
             })
         }
 
+        // 生成 DOMAIN-KEYWORD 规则
         if (ruleConfig.domainKeyword) {
             ruleConfig.domainKeyword.forEach(keyword => {
                 rules.push(`DOMAIN-KEYWORD,${keyword},${target}`)
             })
         }
 
+        // 生成 DOMAIN 规则
         if (ruleConfig.domain) {
             ruleConfig.domain.forEach(domain => {
                 rules.push(`DOMAIN,${domain},${target}`)
             })
         }
 
+        // 生成 PROCESS-NAME 规则
         if (ruleConfig.processName) {
             ruleConfig.processName.forEach(process => {
                 rules.push(`PROCESS-NAME,${process},${target}`)
             })
         }
 
+        // 生成 RULE-SET 规则
         if (ruleConfig.ruleSets) {
             ruleConfig.ruleSets.forEach(ruleSetName => {
                 rules.push(`RULE-SET,${ruleSetName},${target}`)
@@ -426,6 +510,7 @@ function generateCustomRules() {
     return rules
 }
 
+// 额外直连规则：放在最终规则数组最前面，确保优先于后续的分流规则和 MATCH
 const additionalDirectRules = [
     'DOMAIN,wantdp-test.want-want.com,DIRECT',
     'DOMAIN,invite.linuxdo.org,DIRECT',
@@ -438,26 +523,36 @@ const additionalDirectRules = [
     'IP-CIDR,169.254.0.0/16,DIRECT,no-resolve',
 ]
 
+// 生成最终的规则数组
 const rules = [...additionalDirectRules, ...generateCustomRules()]
 
+// 程序入口
 function main(config) {
     const proxyCount = config?.proxies?.length ?? 0
     const proxyProviderCount =
         typeof config?.['proxy-providers'] === 'object'
             ? Object.keys(config['proxy-providers']).length
             : 0
-
     if (proxyCount === 0 && proxyProviderCount === 0) {
         throw new Error('配置文件中未找到任何代理')
     }
 
+    const configuredProxies = Array.isArray(config?.proxies)
+        ? config.proxies
+        : []
+
     let regionProxyGroups = []
-    let otherProxyGroups = config.proxies.map(b => b.name)
+    let otherProxyGroups = configuredProxies.map((b) => {
+        return b.name
+    })
 
     config['allow-lan'] = true
+
     config['bind-address'] = '*'
+
     config['mode'] = 'rule'
 
+    // 覆盖原配置中DNS配置
     if (enableDnsOverride) {
         config['dns'] = dnsConfig
     }
@@ -468,14 +563,32 @@ function main(config) {
     }
 
     config['unified-delay'] = true
+
     config['tcp-concurrent'] = true
+
+    /**
+     * 这个值设置大点能省电，笔记本和手机需要关注一下
+     */
     config['keep-alive-interval'] = 1800
+
     config['find-process-mode'] = 'strict'
+
     config['geodata-mode'] = true
+
+    /**
+     * 适合小内存环境，如果在旁路由里运行可以改成standard
+     */
     config['geodata-loader'] = 'memconservative'
+
     config['geo-auto-update'] = true
+
     config['geo-update-interval'] = 24
 
+    /**
+     * 不开域名嗅探的话，日志里只会记录请求的ip，对查找问题不方便
+     * override-destination默认值是true，但是个人建议全局设为false，否则某些应用会出现莫名其妙的问题
+     * Mijia Cloud跳过是网上抄的
+     */
     config['sniffer'] = {
         enable: true,
         'force-dns-mapping': true,
@@ -511,6 +624,9 @@ function main(config) {
         'skip-domain': ['Mijia Cloud', '+.oray.com'],
     }
 
+    /**
+     * write-to-system如果设为true的话，有可能出现电脑时间不对的问题
+     */
     config['ntp'] = {
         enable: true,
         'write-to-system': false,
@@ -522,142 +638,159 @@ function main(config) {
             'https://github.com/MetaCubeX/meta-rules-dat/releases/download/latest/geoip-lite.dat',
         geosite:
             'https://github.com/MetaCubeX/meta-rules-dat/releases/download/latest/geosite.dat',
-        mmdb:
-            'https://github.com/MetaCubeX/meta-rules-dat/releases/download/latest/country-lite.mmdb',
-        asn:
-            'https://github.com/MetaCubeX/meta-rules-dat/releases/download/latest/GeoLite2-ASN.mmdb',
+        mmdb: 'https://github.com/MetaCubeX/meta-rules-dat/releases/download/latest/country-lite.mmdb',
+        asn: 'https://github.com/MetaCubeX/meta-rules-dat/releases/download/latest/GeoLite2-ASN.mmdb',
     }
 
+    /**
+     * 总开关关闭时不处理策略组
+     */
     if (!enable) {
         return config
     }
 
-    const usedProxies = new Set()
-    regionOptions.regions.forEach(region => {
-        const proxies = []
-
-        for (const proxy of config.proxies) {
-            const name = proxy.name
-
-            if (!region.regex.test(name)) continue
-
+    // ===== 性能优化：使用 Set 优化节点过滤 =====
+    const usedProxies = new Set();
+    
+    regionOptions.regions.forEach((region) => {
+        /**
+         * 提取倍率符合要求的代理节点
+         * 优化：使用预编译的正则，减少每次执行的开销
+         */
+        const proxies = [];
+        
+        for (const proxy of configuredProxies) {
+            const name = proxy.name;
+            
+            // 先检查是否匹配地区
+            if (!region.regex.test(name)) continue;
+            
+            // 再检查倍率（如果启用了排除高倍率）
             if (regionOptions.excludeHighPercentage) {
-                const match = RATIO_REGEX.exec(name)
-                const multiplier = match ? Number(match[1]) : 0
-
-                if (multiplier > region.ratioLimit) continue
+                const match = RATIO_REGEX.exec(name);
+                const multiplier = match ? Number(match[1]) : 0;
+                if (multiplier > region.ratioLimit) continue;
             }
-
-            proxies.push(name)
-            usedProxies.add(name)
+            
+            proxies.push(name);
+            usedProxies.add(name);
         }
 
-        if (proxies.length > 0) {
+        /**
+         * 必须再判断一下有没有符合要求的代理节点
+         * 没有的话，这个策略组就不应该存在
+         */
+        // 有代理提供商时，即使 config.proxies 为空，也创建带 filter 的地区组
+        if (proxies.length > 0 || proxyProviderCount > 0) {
             regionProxyGroups.push({
                 ...groupBaseOption,
                 name: region.name,
                 type: enableUrltest ? 'url-test' : 'select',
                 tolerance: enableUrltest ? 50 : undefined,
                 icon: region.icon,
+                'include-all': true,
+                filter: `(?i)${region.regex.source}`,
+                'exclude-filter': nodeExcludeFilter,
                 proxies: proxies,
             })
         }
     })
+    
+    // 优化：使用 Set 一次性过滤，而不是多次 filter
+    otherProxyGroups = otherProxyGroups.filter((x) => !usedProxies.has(x))
 
-    otherProxyGroups = otherProxyGroups.filter(x => !usedProxies.has(x))
-
+    // 动态国家识别与分组（对未匹配的节点自动建组）
     if (regionOptions.autoDetect) {
-        const existingGroupsMap = new Map(
-            regionProxyGroups.map(g => [g.name, g])
-        )
-        const detected = new Map()
-        const addedProxySet = new Set()
+        // ===== 性能优化：使用 Map 优化查找性能 =====
+        const existingGroupsMap = new Map(regionProxyGroups.map(g => [g.name, g]));
+        const detected = new Map();
+        const addedProxySet = new Set();
 
         for (const n of otherProxyGroups) {
-            const code = detectCountryCode(n)
-            if (!code) continue
-
-            const info = CODE_TO_REGION[code] || {
-                name: code,
-                icon: regionOptions.defaultIcon
-            }
-
-            const rname = info.name
-            const existingGroup = existingGroupsMap.get(rname)
-
+            const code = detectCountryCode(n);
+            if (!code) continue;
+            
+            const info = CODE_TO_REGION[code] || { name: code, icon: regionOptions.defaultIcon };
+            const rname = info.name;
+            
+            // 优化：使用 Map.get 代替 find，O(1) vs O(n)
+            const existingGroup = existingGroupsMap.get(rname);
             if (existingGroup) {
+                // 优化：使用 Set 检查重复，避免 includes 的 O(n) 复杂度
                 if (!existingGroup.proxies.includes(n)) {
-                    existingGroup.proxies.push(n)
-                    addedProxySet.add(n)
+                    existingGroup.proxies.push(n);
+                    addedProxySet.add(n);
                 }
             } else {
                 if (!detected.has(rname)) {
-                    detected.set(rname, {
-                        proxies: [],
-                        icon: info.icon
-                    })
+                    detected.set(rname, { proxies: [], icon: info.icon });
                 }
-
-                detected.get(rname).proxies.push(n)
-                addedProxySet.add(n)
+                detected.get(rname).proxies.push(n);
+                addedProxySet.add(n);
             }
         }
 
         for (const [rname, data] of detected.entries()) {
-            if (data.proxies.length === 0) continue
-
+            if (data.proxies.length === 0) continue;
+            
             regionProxyGroups.push({
                 ...groupBaseOption,
                 name: rname,
                 type: enableUrltest ? 'url-test' : 'select',
                 tolerance: enableUrltest ? 50 : undefined,
                 icon: data.icon,
+                'include-all': true,
+                'exclude-filter': nodeExcludeFilter,
                 proxies: data.proxies,
-            })
+            });
         }
 
+        // 优化：只在有新增节点时才过滤
         if (addedProxySet.size > 0) {
-            otherProxyGroups = otherProxyGroups.filter(
-                x => !addedProxySet.has(x)
-            )
+            otherProxyGroups = otherProxyGroups.filter(x => !addedProxySet.has(x));
         }
     }
-
-    const proxyGroupsRegionNames = regionProxyGroups.map(g => g.name)
+    // ===== 性能优化：简化 map 操作 =====
+    const proxyGroupsRegionNames = regionProxyGroups.map(g => g.name);
 
     if (otherProxyGroups.length > 0) {
         proxyGroupsRegionNames.push('其他节点')
     }
 
-    const allNodeNames = config.proxies.map(p => p.name)
+    // ===== 全部节点：包含所有代理节点（不含地区过滤） =====
+ const allNodeNames = configuredProxies.map((p) => p.name)
 
-    config['proxy-groups'] = [
-        {
-            ...groupBaseOption,
-            name: '全部节点',
-            type: 'url-test',
-            tolerance: 50,
-            proxies: [...allNodeNames],
-            icon: 'https://fastly.jsdelivr.net/gh/Koolson/Qure/IconSet/Color/World_Map.png',
-        },
-        {
-            ...groupBaseOption,
-            name: '默认节点',
-            type: 'select',
-            proxies: ['全部节点', ...proxyGroupsRegionNames, 'DIRECT'],
-            icon: 'https://fastly.jsdelivr.net/gh/Koolson/Qure/IconSet/Color/Proxy.png',
-        },
-    ]
+ config['proxy-groups'] = [
+ {
+ ...groupBaseOption,
+ name: '全部节点',
+ type: 'url-test',
+ tolerance: 50,
+ 'include-all': true,
+ 'exclude-filter': nodeExcludeFilter,
+ proxies: [...allNodeNames],
+ icon: 'https://fastly.jsdelivr.net/gh/Koolson/Qure/IconSet/Color/World_Map.png',
+ },
+ {
+ ...groupBaseOption,
+ name: '默认节点',
+ type: 'select',
+ proxies: ['全部节点', ...proxyGroupsRegionNames, 'DIRECT'],
+ icon: 'https://fastly.jsdelivr.net/gh/Koolson/Qure/IconSet/Color/Proxy.png',
+ },
+ ]
 
-    config.proxies = config?.proxies || []
-
+    config.proxies = configuredProxies
     if (ruleOptions.openai) {
         rules.push(
             'DOMAIN-SUFFIX,grazie.ai,国外AI',
             'DOMAIN-SUFFIX,grazie.aws.intellij.net,国外AI',
             'RULE-SET,ai,国外AI',
+            'RULE-SET,bing,国外AI',
+            'RULE-SET,copilot,国外AI',
+            'RULE-SET,claude,国外AI',
+            'RULE-SET,bard,国外AI',
         )
-
         ruleProviders.set('ai', {
             ...ruleProviderCommon,
             behavior: 'classical',
@@ -666,25 +799,32 @@ function main(config) {
             path: './ruleset/YaNet/ai.list',
         })
 
-        const aiProxyRegions = proxyGroupsRegionNames.filter(
-            n => n !== 'HK香港'
+        // ★ AI 节点顺序：美国优先，其次其他海外地区，最后才是 DIRECT
+        // ★ 排除中国大陆和香港，避免 GPT 默认走这些地区
+        const aiForeignRegions = proxyGroupsRegionNames.filter(
+            name => !['US美国', 'CN中国大陆', 'HK香港', '其他节点'].includes(name)
         )
+        const aiProxyRegions = [
+            ...(proxyGroupsRegionNames.includes('US美国') ? ['US美国'] : []),
+            ...aiForeignRegions,
+            ...(proxyGroupsRegionNames.includes('其他节点') ? ['其他节点'] : []),
+            'DIRECT',
+        ]
 
+        // ★ fallback 会按顺序探测：美国节点全部不可用后，再切换其他海外节点
         config['proxy-groups'].push({
             ...groupBaseOption,
             name: 'AI默认节点',
-            type: enableUrltest ? 'url-test' : 'select',
-            tolerance: enableUrltest ? 50 : undefined,
-            proxies: [...aiProxyRegions, 'DIRECT'],
+            type: 'fallback',
+            proxies: aiProxyRegions,
             url: 'https://chat.openai.com/cdn-cgi/trace',
             icon: 'https://fastly.jsdelivr.net/gh/Koolson/Qure/IconSet/Color/ChatGPT.png',
         })
-
         config['proxy-groups'].push({
             ...groupBaseOption,
             name: '国外AI',
             type: 'select',
-            proxies: ['AI默认节点', ...aiProxyRegions, 'DIRECT'],
+            proxies: ['AI默认节点', ...aiProxyRegions],
             url: 'https://chat.openai.com/cdn-cgi/trace',
             icon: 'https://fastly.jsdelivr.net/gh/Koolson/Qure/IconSet/Color/ChatGPT.png',
         })
@@ -692,7 +832,6 @@ function main(config) {
 
     if (ruleOptions.youtube) {
         rules.push('GEOSITE,youtube,YouTube')
-
         config['proxy-groups'].push({
             ...groupBaseOption,
             name: 'YouTube',
@@ -705,7 +844,6 @@ function main(config) {
 
     if (ruleOptions.biliintl) {
         rules.push('GEOSITE,biliintl,哔哩哔哩东南亚')
-
         config['proxy-groups'].push({
             ...groupBaseOption,
             name: '哔哩哔哩东南亚',
@@ -718,7 +856,6 @@ function main(config) {
 
     if (ruleOptions.bahamut) {
         rules.push('GEOSITE,bahamut,巴哈姆特')
-
         config['proxy-groups'].push({
             ...groupBaseOption,
             name: '巴哈姆特',
@@ -731,7 +868,6 @@ function main(config) {
 
     if (ruleOptions.disney) {
         rules.push('GEOSITE,disney,Disney+')
-
         config['proxy-groups'].push({
             ...groupBaseOption,
             name: 'Disney+',
@@ -744,7 +880,6 @@ function main(config) {
 
     if (ruleOptions.netflix) {
         rules.push('GEOSITE,netflix,NETFLIX')
-
         config['proxy-groups'].push({
             ...groupBaseOption,
             name: 'NETFLIX',
@@ -757,7 +892,6 @@ function main(config) {
 
     if (ruleOptions.tiktok) {
         rules.push('GEOSITE,tiktok,Tiktok')
-
         config['proxy-groups'].push({
             ...groupBaseOption,
             name: 'Tiktok',
@@ -770,7 +904,6 @@ function main(config) {
 
     if (ruleOptions.spotify) {
         rules.push('GEOSITE,spotify,Spotify')
-
         config['proxy-groups'].push({
             ...groupBaseOption,
             name: 'Spotify',
@@ -783,7 +916,6 @@ function main(config) {
 
     if (ruleOptions.pixiv) {
         rules.push('GEOSITE,pixiv,Pixiv')
-
         config['proxy-groups'].push({
             ...groupBaseOption,
             name: 'Pixiv',
@@ -796,7 +928,6 @@ function main(config) {
 
     if (ruleOptions.hbo) {
         rules.push('GEOSITE,hbo,HBO')
-
         config['proxy-groups'].push({
             ...groupBaseOption,
             name: 'HBO',
@@ -809,7 +940,6 @@ function main(config) {
 
     if (ruleOptions.tvb) {
         rules.push('GEOSITE,tvb,TVB')
-
         config['proxy-groups'].push({
             ...groupBaseOption,
             name: 'TVB',
@@ -822,20 +952,18 @@ function main(config) {
 
     if (ruleOptions.primevideo) {
         rules.push('GEOSITE,primevideo,Prime Video')
-
         config['proxy-groups'].push({
             ...groupBaseOption,
             name: 'Prime Video',
             type: 'select',
             proxies: ['默认节点', ...proxyGroupsRegionNames, 'DIRECT'],
-            url: 'https://m-media-amazon.com/images/G/01/digital/video/web/logo-min-remaster.png',
+            url: 'https://m.media-amazon.com/images/G/01/digital/video/web/logo-min-remaster.png',
             icon: 'https://fastly.jsdelivr.net/gh/Koolson/Qure/IconSet/Color/Prime_Video.png',
         })
     }
 
     if (ruleOptions.hulu) {
         rules.push('GEOSITE,hulu,Hulu')
-
         config['proxy-groups'].push({
             ...groupBaseOption,
             name: 'Hulu',
@@ -848,7 +976,6 @@ function main(config) {
 
     if (ruleOptions.telegram) {
         rules.push('GEOIP,telegram,Telegram')
-
         config['proxy-groups'].push({
             ...groupBaseOption,
             name: 'Telegram',
@@ -861,7 +988,6 @@ function main(config) {
 
     if (ruleOptions.whatsapp) {
         rules.push('GEOSITE,whatsapp,WhatsApp')
-
         config['proxy-groups'].push({
             ...groupBaseOption,
             name: 'WhatsApp',
@@ -874,7 +1000,6 @@ function main(config) {
 
     if (ruleOptions.line) {
         rules.push('GEOSITE,line,Line')
-
         config['proxy-groups'].push({
             ...groupBaseOption,
             name: 'Line',
@@ -890,7 +1015,6 @@ function main(config) {
             'GEOSITE,category-games@cn,国内网站',
             'GEOSITE,category-games,游戏专用'
         )
-
         config['proxy-groups'].push({
             ...groupBaseOption,
             name: '游戏专用',
@@ -902,7 +1026,6 @@ function main(config) {
 
     if (ruleOptions.tracker) {
         rules.push('GEOSITE,tracker,跟踪分析')
-
         config['proxy-groups'].push({
             ...groupBaseOption,
             name: '跟踪分析',
@@ -915,7 +1038,6 @@ function main(config) {
     if (ruleOptions.ads) {
         rules.push('GEOSITE,category-ads-all,广告过滤')
         rules.push('RULE-SET,adblockmihomo,广告过滤')
-
         ruleProviders.set('adblockmihomo', {
             ...ruleProviderCommon,
             behavior: 'domain',
@@ -923,7 +1045,6 @@ function main(config) {
             url: 'https://github.com/217heidai/adblockfilters/raw/refs/heads/main/rules/adblockmihomo.mrs',
             path: './ruleset/adblockfilters/adblockmihomo.mrs',
         })
-
         config['proxy-groups'].push({
             ...groupBaseOption,
             name: '广告过滤',
@@ -935,7 +1056,6 @@ function main(config) {
 
     if (ruleOptions.apple) {
         rules.push('GEOSITE,apple-cn,苹果服务')
-
         config['proxy-groups'].push({
             ...groupBaseOption,
             name: '苹果服务',
@@ -948,7 +1068,6 @@ function main(config) {
 
     if (ruleOptions.google) {
         rules.push('GEOSITE,google,谷歌服务')
-
         config['proxy-groups'].push({
             ...groupBaseOption,
             name: '谷歌服务',
@@ -960,11 +1079,7 @@ function main(config) {
     }
 
     if (ruleOptions.microsoft) {
-        rules.push(
-            'GEOSITE,microsoft@cn,国内网站',
-            'GEOSITE,microsoft,微软服务'
-        )
-
+        rules.push('GEOSITE,microsoft@cn,国内网站', 'GEOSITE,microsoft,微软服务')
         config['proxy-groups'].push({
             ...groupBaseOption,
             name: '微软服务',
@@ -977,7 +1092,6 @@ function main(config) {
 
     if (ruleOptions.github) {
         rules.push('GEOSITE,github,Github')
-
         config['proxy-groups'].push({
             ...groupBaseOption,
             name: 'Github',
@@ -993,7 +1107,6 @@ function main(config) {
             'RULE-SET,category-bank-jp,日本网站',
             'GEOIP,jp,日本网站,no-resolve'
         )
-
         ruleProviders.set('category-bank-jp', {
             ...ruleProviderCommon,
             behavior: 'domain',
@@ -1002,11 +1115,9 @@ function main(config) {
             path: './ruleset/MetaCubeX/category-bank-jp.mrs',
         })
 
+        // 找到日本节点组，优先放在第一位
         const jpGroupName = 'JP日本'
-        const otherRegionNames = proxyGroupsRegionNames.filter(
-            name => name !== jpGroupName
-        )
-
+        const otherRegionNames = proxyGroupsRegionNames.filter(name => name !== jpGroupName)
         const jpProxies = proxyGroupsRegionNames.includes(jpGroupName)
             ? [jpGroupName, '默认节点', ...otherRegionNames, 'DIRECT']
             : ['默认节点', ...proxyGroupsRegionNames, 'DIRECT']
@@ -1028,7 +1139,6 @@ function main(config) {
         'GEOIP,cn,国内网站,no-resolve',
         'MATCH,其他外网'
     )
-
     config['proxy-groups'].push(
         {
             ...groupBaseOption,
@@ -1047,12 +1157,7 @@ function main(config) {
             ...groupBaseOption,
             name: '其他外网',
             type: 'select',
-            proxies: [
-                '默认节点',
-                'DIRECT',
-                '国内网站',
-                ...proxyGroupsRegionNames
-            ],
+            proxies: ['默认节点', 'DIRECT',  '国内网站', ...proxyGroupsRegionNames],
             icon: 'https://fastly.jsdelivr.net/gh/Koolson/Qure/IconSet/Color/Streaming!CN.png',
         },
         {
@@ -1067,6 +1172,7 @@ function main(config) {
 
     config['proxy-groups'] = config['proxy-groups'].concat(regionProxyGroups)
 
+    // 覆盖原配置中的规则
     config['rules'] = rules
     config['rule-providers'] = Object.fromEntries(ruleProviders)
 
@@ -1080,5 +1186,6 @@ function main(config) {
         })
     }
 
+    // 返回修改后的配置
     return config
 }
