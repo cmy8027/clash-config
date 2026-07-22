@@ -260,6 +260,23 @@ const groupBaseOption = {
     hidden: false,
 }
 
+// 规则模式和 GLOBAL 中的策略组优先展示顺序。
+// 地区组会动态插入到最前面，服务组按此顺序跟随其后。
+const priorityServiceGroupNames = [
+    '国外AI',
+    'YouTube',
+    'Pixiv',
+    '游戏专用',
+    '跟踪分析',
+    '广告过滤',
+    '谷歌服务',
+    '微软服务',
+    'Github',
+    '日本网站',
+    '下载软件',
+    '其他外网',
+]
+
 // 代理提供商中常见的流量、到期、订阅信息节点不加入策略组
 const nodeExcludeFilter =
     '(?i)GB|Traffic|Expire|Premium|频道|订阅|ISP|流量|到期|重置'
@@ -508,6 +525,23 @@ function generateCustomRules() {
     })
 
     return rules
+}
+
+// 将地区组和指定服务组前置，保留其他策略组的原有相对顺序。
+function reorderProxyGroups(proxyGroups, regionGroupNames) {
+    const priorityNames = [...regionGroupNames, ...priorityServiceGroupNames]
+    const remaining = [...proxyGroups]
+    const priorityGroups = []
+
+    for (const name of priorityNames) {
+        const index = remaining.findIndex(group => group.name === name)
+        if (index === -1) continue
+
+        priorityGroups.push(remaining[index])
+        remaining.splice(index, 1)
+    }
+
+    return [...priorityGroups, ...remaining]
 }
 
 // 额外直连规则：放在最终规则数组最前面，确保优先于后续的分流规则和 MATCH
@@ -1188,6 +1222,13 @@ function main(config) {
             icon: 'https://fastly.jsdelivr.net/gh/Koolson/Qure/IconSet/Color/World_Map.png',
         })
     }
+
+    // 规则模式和 GLOBAL 都按截图要求：从 HK香港 开始优先展示地区组，
+    // 然后展示指定服务组，最后保留基础策略组和其他未列入优先级的组。
+    config['proxy-groups'] = reorderProxyGroups(
+        config['proxy-groups'],
+        proxyGroupsRegionNames
+    )
 
     // 返回修改后的配置
     return config
