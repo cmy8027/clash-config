@@ -537,6 +537,7 @@ function generateCustomRules() {
 // 将地区组和指定服务组前置，保留其他策略组的原有相对顺序。
 function reorderProxyGroups(proxyGroups, regionGroupNames) {
     const priorityNames = [
+        '全部节点',
         ...regionGroupNames,
         ...priorityServiceGroupNames,
     ]
