@@ -554,8 +554,8 @@ function reorderProxyGroups(proxyGroups, regionGroupNames) {
     return [...priorityGroups, ...remaining]
 }
 
-// 将现有地区组放到指定选择器的候选列表最前面，并保留其他候选项。
-// 对带 include-all 的目标选择器展开已知节点，避免客户端把自动加入的节点排在显式候选之前。
+// 将现有地区组放到指定选择器显式候选列表的最前面。
+// 普通节点继续由 include-all 自动补充，保持和 override-hub 的策略组结构一致。
 function prependRegionCandidates(proxyGroups, regionGroupNames, allNodeNames) {
     const availableGroupNames = new Set(proxyGroups.map(group => group.name))
     const availableRegionNames = regionGroupNames.filter(name =>
@@ -572,14 +572,17 @@ function prependRegionCandidates(proxyGroups, regionGroupNames, allNodeNames) {
         const existingProxies = Array.isArray(group.proxies)
             ? group.proxies
             : []
-        const includedNodeNames = group['include-all'] === true
-            ? allNodeNames
-            : []
+        const shouldUseIncludeAll =
+            group['include-all'] === true ||
+            ['GLOBAL', 'PROXY', '全部节点'].includes(group.name)
+        const configuredNodeNames = new Set(allNodeNames)
+        const retainedExplicitProxies = shouldUseIncludeAll
+            ? existingProxies.filter(name => !configuredNodeNames.has(name))
+            : existingProxies
         const seen = new Set()
         const proxies = [
             ...availableRegionNames.filter(name => name !== group.name),
-            ...existingProxies,
-            ...includedNodeNames,
+            ...retainedExplicitProxies,
         ].filter(name => {
             if (seen.has(name)) return false
             seen.add(name)
@@ -589,11 +592,56 @@ function prependRegionCandidates(proxyGroups, regionGroupNames, allNodeNames) {
         return {
             ...group,
             proxies,
-            ...(group['include-all'] === true && allNodeNames.length > 0
-                ? { 'include-all': false }
-                : {}),
+            ...(shouldUseIncludeAll ? { 'include-all': true } : {}),
         }
     })
+}
+
+// 明确重建 GLOBAL/PROXY 选择器，兼容全局页对 GLOBAL 组的读取方式。
+// 结构与 override-hub 一致：地区组是显式候选，普通节点由 include-all 追加。
+function ensureGlobalSelectorGroups(proxyGroups, regionGroupNames, allNodeNames) {
+    const availableGroupNames = new Set(proxyGroups.map(group => group.name))
+    const availableRegionNames = regionGroupNames.filter(name =>
+        availableGroupNames.has(name)
+    )
+    const configuredNodeNames = new Set(allNodeNames)
+    const result = [...proxyGroups]
+
+    for (const name of ['PROXY', 'GLOBAL']) {
+        const index = result.findIndex(group => group.name === name)
+        const existingGroup = index >= 0 ? result[index] : null
+        const existingProxies = Array.isArray(existingGroup?.proxies)
+            ? existingGroup.proxies
+            : []
+        const retainedExplicitProxies = existingProxies.filter(candidate =>
+            !configuredNodeNames.has(candidate)
+        )
+        const seen = new Set()
+        const proxies = [
+            ...availableRegionNames,
+            ...retainedExplicitProxies,
+        ].filter(candidate => {
+            if (seen.has(candidate)) return false
+            seen.add(candidate)
+            return true
+        })
+        const nextGroup = {
+            ...(existingGroup || groupBaseOption),
+            name,
+            type: 'select',
+            'include-all': true,
+            'exclude-filter': nodeExcludeFilter,
+            proxies,
+        }
+
+        if (index >= 0) {
+            result[index] = nextGroup
+        } else {
+            result.push(nextGroup)
+        }
+    }
+
+    return result
 }
 
 // 额外直连规则：放在最终规则数组最前面，确保优先于后续的分流规则和 MATCH
@@ -1299,6 +1347,11 @@ function main(config) {
     )
 
     config['proxy-groups'] = prependRegionCandidates(
+        config['proxy-groups'],
+        proxyGroupsRegionNames,
+        allNodeNames
+    )
+    config['proxy-groups'] = ensureGlobalSelectorGroups(
         config['proxy-groups'],
         proxyGroupsRegionNames,
         allNodeNames
