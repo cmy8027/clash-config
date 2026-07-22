@@ -260,7 +260,7 @@ const groupBaseOption = {
     hidden: false,
 }
 
-// 规则模式和 GLOBAL 中的策略组优先展示顺序。
+// 规则模式和各选择器中的策略组优先展示顺序。
 // 地区组会动态插入到最前面，服务组按此顺序跟随其后。
 const priorityServiceGroupNames = [
     '国外AI',
@@ -276,6 +276,13 @@ const priorityServiceGroupNames = [
     '下载软件',
     '其他外网',
 ]
+
+const priorityCandidateContainerNames = new Set([
+    'GLOBAL',
+    'PROXY',
+    '全部节点',
+    '默认节点',
+])
 
 // 代理提供商中常见的流量、到期、订阅信息节点不加入策略组
 const nodeExcludeFilter =
@@ -332,12 +339,12 @@ function detectCountryCode(name) {
   // for (const [flag, code] of Object.entries(FLAG_TO_CODE)) {
   //   if (name.includes(flag)) return code;
   // }
-  
+
   // 优化：使用 for...of 代替 Object.entries，减少迭代开销
   for (const zh in ZH_TO_CODE) {
     if (name.includes(zh)) return ZH_TO_CODE[zh];
   }
-  
+
   const upper = name.toUpperCase();
   // 使用预编译的正则表达式
   for (const { regex, code } of CODE_TOKEN_REGEXES) {
@@ -529,7 +536,10 @@ function generateCustomRules() {
 
 // 将地区组和指定服务组前置，保留其他策略组的原有相对顺序。
 function reorderProxyGroups(proxyGroups, regionGroupNames) {
-    const priorityNames = [...regionGroupNames, ...priorityServiceGroupNames]
+    const priorityNames = [
+        ...regionGroupNames,
+        ...priorityServiceGroupNames,
+    ]
     const remaining = [...proxyGroups]
     const priorityGroups = []
 
@@ -542,6 +552,37 @@ function reorderProxyGroups(proxyGroups, regionGroupNames) {
     }
 
     return [...priorityGroups, ...remaining]
+}
+
+// 将现有地区组放到指定选择器的候选列表最前面，并保留其他候选项。
+function prependRegionCandidates(proxyGroups, regionGroupNames) {
+    const availableGroupNames = new Set(proxyGroups.map(group => group.name))
+    const availableRegionNames = regionGroupNames.filter(name =>
+        availableGroupNames.has(name)
+    )
+
+    if (availableRegionNames.length === 0) return proxyGroups
+
+    return proxyGroups.map(group => {
+        if (!priorityCandidateContainerNames.has(group.name)) {
+            return group
+        }
+
+        const existingProxies = Array.isArray(group.proxies)
+            ? group.proxies
+            : []
+        const seen = new Set()
+        const proxies = [
+            ...availableRegionNames.filter(name => name !== group.name),
+            ...existingProxies,
+        ].filter(name => {
+            if (seen.has(name)) return false
+            seen.add(name)
+            return true
+        })
+
+        return { ...group, proxies }
+    })
 }
 
 // 额外直连规则：放在最终规则数组最前面，确保优先于后续的分流规则和 MATCH
@@ -576,6 +617,16 @@ function main(config) {
 
     const configuredProxies = Array.isArray(config?.proxies)
         ? config.proxies
+        : []
+
+    // 保留订阅原有的 GLOBAL、PROXY 等策略组，后续只调整其候选项顺序。
+    const originalProxyGroups = Array.isArray(config?.['proxy-groups'])
+        ? config['proxy-groups'].map(group => ({
+            ...group,
+            ...(Array.isArray(group.proxies)
+                ? { proxies: [...group.proxies] }
+                : {}),
+        }))
         : []
 
     let regionProxyGroups = []
@@ -688,27 +739,27 @@ function main(config) {
 
     // ===== 性能优化：使用 Set 优化节点过滤 =====
     const usedProxies = new Set();
-    
+
     regionOptions.regions.forEach((region) => {
         /**
          * 提取倍率符合要求的代理节点
          * 优化：使用预编译的正则，减少每次执行的开销
          */
         const proxies = [];
-        
+
         for (const proxy of configuredProxies) {
             const name = proxy.name;
-            
+
             // 先检查是否匹配地区
             if (!region.regex.test(name)) continue;
-            
+
             // 再检查倍率（如果启用了排除高倍率）
             if (regionOptions.excludeHighPercentage) {
                 const match = RATIO_REGEX.exec(name);
                 const multiplier = match ? Number(match[1]) : 0;
                 if (multiplier > region.ratioLimit) continue;
             }
-            
+
             proxies.push(name);
             usedProxies.add(name);
         }
@@ -732,7 +783,7 @@ function main(config) {
             })
         }
     })
-    
+
     // 优化：使用 Set 一次性过滤，而不是多次 filter
     otherProxyGroups = otherProxyGroups.filter((x) => !usedProxies.has(x))
 
@@ -746,10 +797,10 @@ function main(config) {
         for (const n of otherProxyGroups) {
             const code = detectCountryCode(n);
             if (!code) continue;
-            
+
             const info = CODE_TO_REGION[code] || { name: code, icon: regionOptions.defaultIcon };
             const rname = info.name;
-            
+
             // 优化：使用 Map.get 代替 find，O(1) vs O(n)
             const existingGroup = existingGroupsMap.get(rname);
             if (existingGroup) {
@@ -769,7 +820,7 @@ function main(config) {
 
         for (const [rname, data] of detected.entries()) {
             if (data.proxies.length === 0) continue;
-            
+
             regionProxyGroups.push({
                 ...groupBaseOption,
                 name: rname,
@@ -1226,8 +1277,23 @@ function main(config) {
         })
     }
 
-    // 规则模式和 GLOBAL 都按截图要求：从 HK香港 开始优先展示地区组，
-    // 然后展示指定服务组，最后保留基础策略组和其他未列入优先级的组。
+    // 生成组优先；只有同名的原组才被生成组覆盖，其余原始策略组继续保留。
+    const generatedGroupNames = new Set(
+        config['proxy-groups'].map(group => group.name)
+    )
+    config['proxy-groups'].push(
+        ...originalProxyGroups.filter(
+            group => !generatedGroupNames.has(group.name)
+        )
+    )
+
+    config['proxy-groups'] = prependRegionCandidates(
+        config['proxy-groups'],
+        proxyGroupsRegionNames
+    )
+
+    // 规则模式和各选择器都按截图要求：现有地区组先置顶，
+    // 再展示指定服务组，最后保留其他策略组。
     config['proxy-groups'] = reorderProxyGroups(
         config['proxy-groups'],
         proxyGroupsRegionNames
