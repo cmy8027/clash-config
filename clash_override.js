@@ -72,12 +72,6 @@ const regionOptions = {
     defaultIcon: 'https://fastly.jsdelivr.net/gh/Koolson/Qure/IconSet/Color/Proxy.png',
     regions: [
         {
-            name: 'HK香港',
-            regex: /港|香港|HONG KONG|HONGKONG|hk|HK|hongkong|hong kong/i,
-            ratioLimit: 5,
-            icon: 'https://fastly.jsdelivr.net/gh/Koolson/Qure/IconSet/Color/Hong_Kong.png',
-        },
-        {
             name: 'US美国',
             regex: /美|🇺🇸|us|USA|usa|US|united state|UNITED STATE|america|America|AMERICA/i,
             ratioLimit: 5,
@@ -100,6 +94,12 @@ const regionOptions = {
             regex: /新加坡|🇸🇬|sg|SG|singapore|SINGAPORE/i,
             ratioLimit: 5,
             icon: 'https://fastly.jsdelivr.net/gh/Koolson/Qure/IconSet/Color/Singapore.png',
+        },
+        {
+            name: 'HK香港',
+            regex: /港|香港|HONG KONG|HONGKONG|hk|HK|hongkong|hong kong/i,
+            ratioLimit: 5,
+            icon: 'https://fastly.jsdelivr.net/gh/Koolson/Qure/IconSet/Color/Hong_Kong.png',
         },
         {
             name: 'CN中国大陆',
