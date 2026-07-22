@@ -796,6 +796,9 @@ function main(config) {
 
     // ===== 全部节点：包含所有代理节点（不含地区过滤） =====
  const allNodeNames = configuredProxies.map((p) => p.name)
+ const allNodeCandidates = [
+     ...new Set([...proxyGroupsRegionNames, ...allNodeNames]),
+ ]
 
  config['proxy-groups'] = [
  {
@@ -805,7 +808,7 @@ function main(config) {
  tolerance: 50,
  'include-all': true,
  'exclude-filter': nodeExcludeFilter,
- proxies: [...allNodeNames],
+ proxies: allNodeCandidates,
  icon: 'https://fastly.jsdelivr.net/gh/Koolson/Qure/IconSet/Color/World_Map.png',
  },
  {
