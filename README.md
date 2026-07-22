@@ -445,6 +445,8 @@ IP-CIDR,192.168.0.0/16,DIRECT,no-resolve
 IP-CIDR,169.254.0.0/16,DIRECT,no-resolve
 ```
 
+其中 `DOMAIN-KEYWORD,want,DIRECT` 表示：只要请求的域名中包含连续字符串 `want`，就直接连接，不经过代理节点。例如 `iww.want-want.com`、`endpoint.want-want.com` 都会直连。只有 URL 路径包含 `want`、但域名本身不包含 `want` 的情况，不会命中这条域名规则。
+
 另外还保留了原脚本中的直连项目：
 
 ```text

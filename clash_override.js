@@ -511,10 +511,13 @@ function generateCustomRules() {
 }
 
 // 额外直连规则：放在最终规则数组最前面，确保优先于后续的分流规则和 MATCH
+// 只要请求域名中包含连续字符串 want，就直连；例如 iww.want-want.com。
+const wantDirectRule = 'DOMAIN-KEYWORD,want,DIRECT'
+
 const additionalDirectRules = [
     'DOMAIN,wantdp-test.want-want.com,DIRECT',
     'DOMAIN,invite.linuxdo.org,DIRECT',
-    'DOMAIN-KEYWORD,want,DIRECT',
+    wantDirectRule,
     'DOMAIN-SUFFIX,local,DIRECT',
     'IP-CIDR,127.0.0.0/8,DIRECT,no-resolve',
     'IP-CIDR,10.0.0.0/8,DIRECT,no-resolve',
