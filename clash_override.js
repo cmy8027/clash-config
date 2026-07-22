@@ -555,7 +555,8 @@ function reorderProxyGroups(proxyGroups, regionGroupNames) {
 }
 
 // 将现有地区组放到指定选择器的候选列表最前面，并保留其他候选项。
-function prependRegionCandidates(proxyGroups, regionGroupNames) {
+// 对带 include-all 的目标选择器展开已知节点，避免客户端把自动加入的节点排在显式候选之前。
+function prependRegionCandidates(proxyGroups, regionGroupNames, allNodeNames) {
     const availableGroupNames = new Set(proxyGroups.map(group => group.name))
     const availableRegionNames = regionGroupNames.filter(name =>
         availableGroupNames.has(name)
@@ -571,17 +572,27 @@ function prependRegionCandidates(proxyGroups, regionGroupNames) {
         const existingProxies = Array.isArray(group.proxies)
             ? group.proxies
             : []
+        const includedNodeNames = group['include-all'] === true
+            ? allNodeNames
+            : []
         const seen = new Set()
         const proxies = [
             ...availableRegionNames.filter(name => name !== group.name),
             ...existingProxies,
+            ...includedNodeNames,
         ].filter(name => {
             if (seen.has(name)) return false
             seen.add(name)
             return true
         })
 
-        return { ...group, proxies }
+        return {
+            ...group,
+            proxies,
+            ...(group['include-all'] === true && allNodeNames.length > 0
+                ? { 'include-all': false }
+                : {}),
+        }
     })
 }
 
@@ -1289,7 +1300,8 @@ function main(config) {
 
     config['proxy-groups'] = prependRegionCandidates(
         config['proxy-groups'],
-        proxyGroupsRegionNames
+        proxyGroupsRegionNames,
+        allNodeNames
     )
 
     // 规则模式和各选择器都按截图要求：现有地区组先置顶，
