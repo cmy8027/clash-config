@@ -228,7 +228,13 @@ const dnsConfig = {
     'direct-nameserver-follow-policy': true,
     'enhanced-mode': 'fake-ip',
     'fake-ip-range': '198.18.0.1/16',
-    'fake-ip-filter': ['*', '+.lan', '+.local', '+.market.xiaomi.com'],
+    'fake-ip-filter': [
+        '*',
+        '+.lan',
+        '+.local',
+        '+.want-want.com',
+        '+.market.xiaomi.com',
+    ],
     nameserver: [...foreignDNS],
     'proxy-server-nameserver': [...foreignDNS],
     /**
@@ -651,6 +657,7 @@ const wantDirectRule = 'DOMAIN-KEYWORD,want,DIRECT'
 
 const additionalDirectRules = [
     'DOMAIN,wantdp-test.want-want.com,DIRECT',
+    'DOMAIN,idpl.want-want.com,DIRECT',
     'DOMAIN,invite.linuxdo.org,DIRECT',
     wantDirectRule,
     'DOMAIN-SUFFIX,local,DIRECT',

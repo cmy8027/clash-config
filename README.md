@@ -436,7 +436,7 @@ const foreignDNS = [
 ```javascript
 'enhanced-mode': 'fake-ip',
 'fake-ip-range': '198.18.0.1/16',
-'fake-ip-filter': ['*', '+.lan', '+.local', '+.market.xiaomi.com'],
+'fake-ip-filter': ['*', '+.lan', '+.local', '+.want-want.com', '+.market.xiaomi.com'],
 ```
 
 如果某些局域网设备访问异常，可以把对应域名加入 fake-ip-filter。
@@ -449,6 +449,7 @@ const foreignDNS = [
 
 ```text
 DOMAIN,wantdp-test.want-want.com,DIRECT
+DOMAIN,idpl.want-want.com,DIRECT
 DOMAIN,invite.linuxdo.org,DIRECT
 DOMAIN-KEYWORD,want,DIRECT
 DOMAIN-SUFFIX,local,DIRECT
