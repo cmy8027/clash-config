@@ -416,14 +416,14 @@ const foreignDNS = [
 'nameserver-policy': {
     'geosite:private': 'system',
     'geosite:cn,steam@cn,category-games@cn,microsoft@cn,apple@cn': chinaDNS,
-    '+.want-want.com': ['system'],
+    '+.want-want.com': ['10.0.0.67', '10.0.0.68'],
     '+.local': ['system'],
 }
 ```
 
 作用：
 
-* want-want.com 使用系统 DNS
+* want-want.com 使用公司内网 DNS `10.0.0.67`、`10.0.0.68`
 * .local 域名使用系统 DNS
 * 私有域名使用系统 DNS
 * 国内、Steam 国内、国内游戏、微软国内、苹果国内域名使用国内 DNS

@@ -211,6 +211,9 @@ const chinaDNS = [
 
 const foreignDNS = ['https://120.53.53.53/dns-query', 'https://223.5.5.5/dns-query']
 
+// 公司内网 DNS：用于解析 want-want.com 内部域名
+const corporateDNS = ['10.0.0.67', '10.0.0.68']
+
 /**
  * DNS相关配置
  * true = 启用
@@ -244,7 +247,7 @@ const dnsConfig = {
     'nameserver-policy': {
         'geosite:private': 'system',
         'geosite:cn,steam@cn,category-games@cn,microsoft@cn,apple@cn': chinaDNS,
-        '+.want-want.com': ['system'],
+        '+.want-want.com': corporateDNS,
         '+.local': ['system'],
     },
 }
