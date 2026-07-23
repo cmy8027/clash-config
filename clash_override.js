@@ -247,7 +247,7 @@ const dnsConfig = {
     'nameserver-policy': {
         'geosite:private': 'system',
         'geosite:cn,steam@cn,category-games@cn,microsoft@cn,apple@cn': chinaDNS,
-        '+.want-want.com': corporateDNS,
+        '+.want-want.com': ['system'],
         '+.local': ['system'],
     },
 }
